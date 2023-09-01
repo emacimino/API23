@@ -1,0 +1,3 @@
+C:/Users/ema/CLionProjects/API23/cmake-build-debug/CMakeFiles/API23.dir
+C:/Users/ema/CLionProjects/API23/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/ema/CLionProjects/API23/cmake-build-debug/CMakeFiles/rebuild_cache.dir
