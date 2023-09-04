@@ -19,6 +19,7 @@ typedef struct station{
     int location;
     int car_number;
     car* cars;
+    int max_distance;
     struct station *left;
     struct station *right;
     struct station *father;
@@ -26,33 +27,36 @@ typedef struct station{
 
 typedef struct simplifiedStation{
     int location;
-    int hopNumber;
+    int max_car;
     struct simplifiedStation *nextHop;
     struct simplifiedStation *prevHop;
 
 } simplifiedStation;
 
-typedef struct headStation{
-    int hopNumber;
-    struct headStation *nextRoute;
-    struct headStation *prevRoute;
-    simplifiedStation *firstHop;
-} headStation;
 
 
 
 
-void addCar(station *freewayStation, int location, int distance);
-void addStation(station **freewayStation, int distance, int numOfCars, int *tripDistance);
-void deleteStation(int location, station *freewayStation);
+
+void addCar(station **freewayStation, int location, int distance);
+void addStation(station **freewayStation, int location, int numOfCars, int *tripDistance);
+void deleteStation(int location, station **freewayStation);
 void destroyCar(int location, int distance, station *freewayStation);
-void planRoute(int departure, int arrival, station *freewayStation);
-char insertBST(station *stationToAdd, station *freewayStation);
-void stationTransplant(station *freeWayStation, station *u, station *v);
+void planRoute(int departure, int arrival, station **freewayStation);
+void stationTransplant(station **freeWayStation, station **u, station **v);
 void insertCarBST(int trip, car** carTree);
-int extractMaxCar(car *fleet);
-station *successor(station *pStation);
-void findRoute(simplifiedStation *simplifiedStation, headStation *headRouteStation, station *departureStation, int arrival);
+
+void stationBSTDelete(station **treeRoot, station **toDelete);
+
+station *treeMinimum(struct station **pStation);
+
+station *findDeparture(int departure, station **headTree);
+
+
+void appendToList(station *treeStation, simplifiedStation **routeStation);
+
+void inOrderVisitAndCreateList(station **treeStation, simplifiedStation **listStation, int departure, int arrival);
+
 
 void addStation(station **freewayStation, int location, int numOfCars, int *tripDistance) {
 
@@ -60,14 +64,22 @@ void addStation(station **freewayStation, int location, int numOfCars, int *trip
     stationToAdd->right = NULL;
     stationToAdd->left = NULL;
     stationToAdd->father = NULL;
+    stationToAdd->cars = NULL;
     stationToAdd->location = location;
     stationToAdd->car_number = numOfCars;
 
+
     for(int i=0;i<numOfCars;i++){
-        if(i==0)
-            stationToAdd->cars = NULL;
-        insertCarBST(*tripDistance + i, &(stationToAdd->cars));
+        if(i == 0)
+            stationToAdd->max_distance = *tripDistance;
+        if(*(tripDistance + i)>stationToAdd->max_distance)
+            stationToAdd->max_distance = *(tripDistance + i);
+        insertCarBST(*(tripDistance + i), &(stationToAdd->cars));
     }
+    if(numOfCars == 0){
+        stationToAdd->max_distance = 0;
+    }
+
 
     station *y = NULL;
     station *x = *freewayStation;
@@ -90,7 +102,7 @@ void addStation(station **freewayStation, int location, int numOfCars, int *trip
     else
         y->right = stationToAdd;
 
-    printf( "aggiunta");
+    printf("aggiunta");
 }
 
 void insertCarBST(int trip, car** carTree) {
@@ -116,68 +128,85 @@ void insertCarBST(int trip, car** carTree) {
         y->right = z;
 }
 
-void addCar(station *freewayStation, int location, int distance) {
+void addCar(station **freewayStation, int location, int distance) {
 
-    station *tmp = freewayStation;
-    while(tmp!=NULL){
-        if(tmp->location > location)
-            tmp=tmp->left;
-        else if(tmp->location == location) {
-            insertCarBST(distance, &tmp->cars);
-        }
-        else
-            tmp=tmp->right;
+    station *x = *freewayStation;
+
+    while(x!=NULL){
+        if(location<x->location)
+            x=x->left;
+        else if(location==x->location){
+            if(distance>x->max_distance)
+                x->max_distance = distance;
+            insertCarBST(distance, &x->cars);
+            printf( "aggiunta");
+            return;
+        }else
+            x=x->right;
     }
-    if(tmp == NULL){
-        fprintf(stdout, "non aggiunta");
+    if(x == NULL){
+        printf( "non aggiunta");
         return;
     }
-
 }
 
-void stationTransplant(station *freeWayStation, station *u, station *v) {
-    if(u->father == NULL)
-        freeWayStation = v;
-    else if(u == u->father->left)
-        u->father->left = v;
+void stationTransplant(station **freeWayStation, station **u, station **v) {
+    station *ut = *u;
+    station *vt = *v;
+    station *treeR = *freeWayStation;
+    if(ut->father == NULL)
+        *treeR = *vt;
+    else if(ut == ut->father->left)
+        ut->father->left = vt;
     else
-        u->father->right = v;
-    if(v != NULL)
-        v->father = u->father;
+        ut->father->right = vt;
+    if(vt != NULL)
+        vt->father = ut->father;
+    free(ut);
+    free(vt);
 }
 
-void deleteStation(int location, station *freewayStation) {
-    station *toDelete = freewayStation;
-    while(toDelete!=NULL){
-        if(toDelete->location > location)
+void deleteStation(int location, station **freewayStation) {
+    station *toDelete = *freewayStation;
+
+    while(toDelete != NULL){
+        if(location < toDelete->location)
             toDelete=toDelete->left;
-        else if(toDelete->location == location){
-            if(toDelete->left == NULL)
-                stationTransplant(freewayStation, toDelete, toDelete->right);
-            else if(toDelete->right == NULL)
-                stationTransplant(freewayStation, toDelete, toDelete->left);
-            else{
-                station *y = toDelete->right;
-                while(y->left != NULL)
-                    y = y->left;
-                if(y->father != toDelete){
-                    stationTransplant(freewayStation, y, y->right);
-                    y->right = toDelete->right;
-                    y->right->father = y;
-                }
-                stationTransplant(freewayStation, toDelete, y);
-                y->left = toDelete->left;
-                y->left->father = y;
-            }
-        }
-        else
+        else if(location == toDelete->location){
+            stationBSTDelete(&*freewayStation,&toDelete);
+            printf("demolita");
+            return;
+        }else
             toDelete=toDelete->right;
     }
-    if(toDelete == NULL)
-        fprintf(stdout, "non demolita");
-    else
-        fprintf(stdout, "demolita");
+    printf("non demolita");
     free(toDelete);
+}
+
+void stationBSTDelete(station **treeRoot, station **toDelete) {
+    station *toDel = *toDelete;
+    if(toDel == NULL)
+        stationTransplant(&*treeRoot,&toDel,&toDel->right);
+    else if(toDel->right == NULL)
+        stationTransplant(&*treeRoot,&toDel,&toDel->left);
+    else{
+        station *y = treeMinimum(&toDel->right);
+        if(y->father != toDel){
+            stationTransplant(&*treeRoot,&y,&y->right);
+            y->right = toDel->right;
+            y->right->father = toDel;
+        }
+        stationTransplant(&*treeRoot,&toDel,&y);
+        y->left = toDel->left;
+        y->left->father = y;
+    }
+}
+
+station* treeMinimum(struct station **pStation) {
+    station *result = *pStation;
+    while(result->left!=NULL)
+        result = result->left;
+    return result;
 }
 
 void carTransplant(car *headCar, car *u, car *v) {
@@ -191,6 +220,8 @@ void carTransplant(car *headCar, car *u, car *v) {
         v->father = u->father;
 }
 
+
+//rottama auto probabilmente da rifare
 void destroyCar(int location, int distance, station *freewayStation) {
     station *stationNotToDelete = freewayStation;
     while(stationNotToDelete != NULL){
@@ -224,7 +255,7 @@ void destroyCar(int location, int distance, station *freewayStation) {
                     carToDelete=carToDelete->right;
             }
             if(carToDelete == NULL)
-                fprintf(stdout, "non demolita");
+                fprintf(stdout, "non demolita\n");
             else
                 fprintf(stdout, "demolita");
             free(carToDelete);
@@ -238,91 +269,60 @@ void destroyCar(int location, int distance, station *freewayStation) {
 }
 
 
-void planRoute(int departure, int arrival, station *freewayStation) {
-if(freewayStation == NULL){
-fprintf(stdout, "nessun percorso");
-return;
-}
-station *tmp = freewayStation;
-if(tmp->location > departure)
-tmp=tmp->left;
-else if(tmp->location == departure) {
-simplifiedStation *simpStation = malloc(sizeof (simplifiedStation));
-simpStation->nextHop = NULL;
-headStation *headStat = malloc(sizeof (headStation));
-headStat->hopNumber = 0;
-headStat->prevRoute = NULL;
-findRoute(simpStation,headStat,tmp,arrival);
-}
-else
-tmp=tmp->right;
-/*if(arrival >= departure){
-    *
-     * Crea un array di liste per la ricerca del percorso, scegli l'auto con più autonomia dal lotto, analizza tutti i percorsi raggiungibili e salva in una variabile il numero di hop
-     * e la posizione dell'array della lista prescelta e scarta tutte le liste che ci mettono di più (flag)*/
-
-
-
-//scegliere il massimo dall'heap, poi salvare la location della station, poi cercare la station successiva fino a trovare un percorso
-//dopo aver trovato un percorso inizio a scorrere a ritroso le station per vedere se c'è un percorso con stazioni più vicine alla partenza
-//se non c'è un percorso con stazioni più vicine alla partenza, allora si tiene il percorso trovato
-//se c'è un percorso con stazioni più vicine alla partenza, allora si tiene il percorso con stazioni più vicine alla partenza
-//se il percorso richiede più hop, ovvero non arriva all'hop successivo, allora si tiene il percorso con precedente
-/*scegliere il minimo dal grado per arrivare alla stazione successiva
- *cambiare stazione e iterare fino a quando non si arriva a destinazione
- * */
-//}
-//else{
-/*scegliere il massimo dal grado per arrivare alla stazione successiva
- *cambiare stazione e iterare fino a quando non si arriva a destinazione
- * */
-//}
+void planRoute(int departure, int arrival, station **freewayStation) {
+    station *headRoute = findDeparture(departure, freewayStation);
+    simplifiedStation *stationsAvailable = NULL;
+    inOrderVisitAndCreateList(&headRoute,&stationsAvailable,departure,arrival);
 }
 
-void findRoute(simplifiedStation *pSimplifiedStation, headStation *headRouteStation, station *departureStation, int arrival) {
-    station *tmp = departureStation;
-    int hopNumber = 0;
-    bool checkArrived = false;
-    pSimplifiedStation->location = departureStation->location;
-    while(tmp->location < arrival){
-        simplifiedStation *tmpSimp = pSimplifiedStation;
-        //prima cerco il percorso minimo, cercando di passare sempre al tragitto più lungo per trovare un percorso
-        int trip = extractMaxCar(tmp->cars);
-        station *tmp2 = tmp;
-        while(tmp2->location<=tmp->location+trip){
-            tmp2 = successor(tmp2);
-        }
-        pSimplifiedStation->nextHop->location = tmp2->location;
-        pSimplifiedStation->nextHop->prevHop = pSimplifiedStation;
-        pSimplifiedStation = pSimplifiedStation->nextHop;
-        tmp = tmp2;
-        //poi dalla fine cerco di tornare indietro ed estrarre la max car per vedere se raggiungo
-        //comunque il nodo successivo da una stazione più bassa
+void inOrderVisitAndCreateList(station **treeStation, simplifiedStation **listStation, int departure, int arrival) {
+if(*treeStation!=NULL ){
+    if((*treeStation)->location <arrival){
+        inOrderVisitAndCreateList(&((*treeStation)->left),listStation,departure,arrival);
+        appendToList(*treeStation,&(*listStation));
+        inOrderVisitAndCreateList(&((*treeStation)->right),listStation,departure,arrival);}
+
     }
-    while(pSimplifiedStation->nextHop!=NULL){
-        fprintf(stdout,"%d",pSimplifiedStation->location);
-        pSimplifiedStation = pSimplifiedStation->nextHop;
-    }
+
 }
 
-station *successor(station *pStation) {
-    station *tmp = pStation;
-    if(tmp->right!=NULL){
-        tmp = tmp->right;
-        while (tmp->left!=NULL)
-            tmp = tmp->left;
-    } else {
-        if(tmp->father->left->location == tmp->location)
-            return tmp->father;
-        else{
-            tmp = tmp->father;
-            tmp = tmp->right;
-            while (tmp->left!=NULL)
-                tmp = tmp->left;
-        }
+
+
+void appendToList(station *treeStation, simplifiedStation **routeStation) {
+    if(*routeStation == NULL){
+        (*routeStation) = malloc(sizeof(simplifiedStation));
+        (*routeStation)->prevHop = NULL;
+        (*routeStation)->nextHop = NULL;
+        (*routeStation)->location = treeStation->location;
+        (*routeStation)->max_car = treeStation->max_distance;
+        return;
     }
-    return tmp;
+    simplifiedStation *station = malloc(sizeof(simplifiedStation));
+    simplifiedStation *curr = *routeStation;
+    station->location = treeStation->location;
+    station->max_car = treeStation->max_distance;
+    while (curr->nextHop!= NULL){
+        curr->nextHop = curr;
+    }
+    curr->nextHop = station;
+    station->prevHop = curr;
+    station->nextHop = NULL;
 }
+station *findDeparture(int departure, station **headTree) {
+    station *x = *headTree;
+    station *y = x;
+    while(y!=NULL){
+        if(departure<y->location)
+            y=y->left;
+        else if(departure==y->location){
+            return y;
+        }else
+            y=y->right;
+    }
+    return NULL;
+}
+
+
 
 
 int extractMaxCar(car *fleet) {
@@ -339,13 +339,12 @@ int main(){
     station *pStation = NULL;
 
     FILE *file_in;
-    FILE *file_out;
-    file_in = freopen("archivio_test_aperti/open_1.txt", "r", stdin);
-    file_out = freopen("outMio.txt", "w", stdout);
+
+    file_in = freopen("archivio_test_aperti/open_2.txt", "r", stdin);
+
     if(file_in == NULL)
         return 2;
-    if(file_out == NULL)
-        return 3;
+
 
     char input[COMMAND_LENGTH];
     int location, numOfCars, distance, arrival;
@@ -357,14 +356,15 @@ int main(){
                 for (int i = 0; i < numOfCars; i++)
                     scanf("%d", &tripDistance[i]);
                 addStation(&pStation, location, numOfCars, tripDistance);
+
             }
         } else if (strcmp(input, "demolisci-stazione") == 0) {
             if (scanf("%d", &location) != EOF) {
-                deleteStation(location,pStation);
+                deleteStation(location,&pStation);
             }
         } else if (strcmp(input, "aggiungi-auto") == 0) {
             if (scanf("%d %d", &location, &distance)) {
-                addCar(pStation, location, distance);
+                addCar(&pStation, location, distance);
             }
         } else if (strcmp(input, "rottama-auto") == 0) {
             if (scanf("%d %d", &location, &distance)) {
@@ -372,7 +372,7 @@ int main(){
             }
         } else if (strcmp(input, "pianifica-percorso") == 0) {
             if (scanf("%d %d", &distance, &arrival)) {
-                planRoute( distance, arrival,pStation);
+                planRoute( distance, arrival,&pStation);
             }
         }
     }
