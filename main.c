@@ -1,6 +1,5 @@
-
 #include <stdio.h>
-#include <malloc.h>
+//#include <malloc.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
@@ -26,8 +25,7 @@ typedef struct station{
 } station;
 
 typedef struct simplifiedStation{
-    int location;
-    int max_car;
+    struct station *staz;
     struct simplifiedStation *nextHop;
     struct simplifiedStation *prevHop;
 
@@ -270,20 +268,57 @@ void destroyCar(int location, int distance, station *freewayStation) {
 
 
 void planRoute(int departure, int arrival, station **freewayStation) {
+    int realArrival = arrival;
     station *headRoute = findDeparture(departure, freewayStation);
     simplifiedStation *stationsAvailable = NULL;
+    simplifiedStation *route = NULL;
     inOrderVisitAndCreateList(&headRoute,&stationsAvailable,departure,arrival);
-}
 
-void inOrderVisitAndCreateList(station **treeStation, simplifiedStation **listStation, int departure, int arrival) {
-if(*treeStation!=NULL ){
-    if((*treeStation)->location <arrival){
-        inOrderVisitAndCreateList(&((*treeStation)->left),listStation,departure,arrival);
-        appendToList(*treeStation,&(*listStation));
-        inOrderVisitAndCreateList(&((*treeStation)->right),listStation,departure,arrival);}
+    route = malloc(sizeof(simplifiedStation));
+    route->prevHop = NULL;
+    route->staz = NULL;
+    route->nextHop = NULL;
+    while(departure < arrival){
+        simplifiedStation *curr = stationsAvailable;
+        while(curr->staz->location + curr->staz->max_distance < arrival){
+            curr = curr->nextHop;
+        }
+        if(curr->staz->location==arrival){
+            printf("nessun percorso\n");
+            free(route);
+            return;
+        }
+
+        arrival = curr->staz->location;
+        if(route == NULL){
+            route = malloc(sizeof(simplifiedStation));
+            route->prevHop = NULL;
+            route->staz = curr->staz;
+            route->nextHop = NULL;
+        }
+        else{
+            simplifiedStation *currRoute = malloc(sizeof(simplifiedStation));
+            currRoute->staz = curr->staz;
+            currRoute->nextHop = curr;
+            currRoute->prevHop = NULL;
+            route = currRoute;
+        }
 
     }
 
+
+
+}
+
+void inOrderVisitAndCreateList(station **treeStation, simplifiedStation **listStation, int departure, int arrival) {
+
+    if(*treeStation!=NULL ){
+        inOrderVisitAndCreateList(&((*treeStation)->left),listStation,departure,arrival);
+        if((*treeStation)->location <= arrival && (*treeStation)->location >= departure){
+            appendToList(*treeStation,&(*listStation));
+        }
+        inOrderVisitAndCreateList(&((*treeStation)->right),listStation,departure,arrival);
+    }
 }
 
 
@@ -293,20 +328,19 @@ void appendToList(station *treeStation, simplifiedStation **routeStation) {
         (*routeStation) = malloc(sizeof(simplifiedStation));
         (*routeStation)->prevHop = NULL;
         (*routeStation)->nextHop = NULL;
-        (*routeStation)->location = treeStation->location;
-        (*routeStation)->max_car = treeStation->max_distance;
+        (*routeStation)->staz = treeStation;
         return;
     }
     simplifiedStation *station = malloc(sizeof(simplifiedStation));
     simplifiedStation *curr = *routeStation;
-    station->location = treeStation->location;
-    station->max_car = treeStation->max_distance;
+
     while (curr->nextHop!= NULL){
-        curr->nextHop = curr;
+        curr = curr->nextHop;
     }
     curr->nextHop = station;
     station->prevHop = curr;
     station->nextHop = NULL;
+    station->staz = treeStation;
 }
 station *findDeparture(int departure, station **headTree) {
     station *x = *headTree;
@@ -321,17 +355,6 @@ station *findDeparture(int departure, station **headTree) {
     }
     return NULL;
 }
-
-
-
-
-int extractMaxCar(car *fleet) {
-    int max = 0;
-    while(fleet->right != NULL)
-        max = fleet->distance;
-    return max;
-}
-
 
 
 int main(){
@@ -378,6 +401,9 @@ int main(){
     }
     return 0;
 }
+
+
+
 
 
 
