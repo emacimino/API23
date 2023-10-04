@@ -23,6 +23,12 @@ typedef struct path{
     struct path *prev;
 }path;
 
+typedef struct reversePath{
+    int* path;
+    struct reversePath *next;
+    struct reversePath *prev;
+}reversePath;
+
 void addStation(station *first, int locationToAdd, int numOfCarsToAdd,int max_car, int carsToAdd[512]);
 
 void deleteStation(int location, station *scanStation);
@@ -46,7 +52,7 @@ int main(){
     station* pFirst = &firstStation;
     FILE *file_in;
     FILE *file_out;
-    file_in = freopen("archivio_test_aperti/open_3.txt", "r", stdin);
+    file_in = freopen("archivio_test_aperti/open_2.txt", "r", stdin);
     file_out = freopen("outMio.txt","w",stdout);
 
     if(file_in == NULL)
@@ -113,45 +119,48 @@ void planRoute(int distance, int arrival, station *firstStation) {
 }
 
 void goBackRoute(int distance, int arrival, station *firstStation) {
-//write later
-}
-
-void goOnRoute(int distance, int arrival, station *firstStation) {
     station* route = firstStation;
-    path *tripPath = malloc(sizeof(path));
-    tripPath->next = NULL;
-    tripPath->prev = NULL;
+    int numOfStations = 1;
     while(route->location != arrival)
         route = route->next;
-    tripPath->location = route;
-    route = route->prev;
-    while(distance < arrival) {
-        tripPath->prev = malloc(sizeof(path));
-        tripPath->prev->location = NULL;
-        tripPath->prev->next = tripPath;
-        tripPath->prev->prev = NULL;
-        while (route->location + route->max_distance >= arrival && route->location >= distance) {
-            tripPath->prev->location = route;
-            route = route->prev;
+    while (route->location != distance){
+        route = route->next;
+        numOfStations++;
         }
-        tripPath = tripPath->prev;
-        if(tripPath->location == NULL){
-            printf("nessun percorso\n");
-            while (tripPath->next!=NULL){
-                tripPath =tripPath->next;
-                free(tripPath->prev);
-            }
-            free(tripPath);
-            return;
-        }
-        arrival = tripPath->location->location;
     }
 
-    while(tripPath!=NULL){
-        printf("%d ",tripPath->location->location);
-        tripPath = tripPath->next;
+
+void goOnRoute(int distance, int arrival, station *firstStation) {
+    //si potrebbe migliorare contando le stazioni e creando un array di appoggio invece di fare le malloc
+    station* route = firstStation;
+    int numOfStations = 1;
+    while(route->location != distance)
+        route = route->next;
+    while (route->location != arrival){
+        route = route->next;
+        numOfStations++;
     }
-    printf("\n");
+    int *path = calloc(numOfStations, sizeof(int));
+    route = route->prev;
+    int tmpNumOfStation = numOfStations-1;
+    path[tmpNumOfStation] = arrival;
+    while(distance < arrival) {
+        tmpNumOfStation--;
+        while (route->location + route->max_distance >= arrival && route->location >= distance) {
+            path[tmpNumOfStation] = route->location;
+            route = route->prev;
+        }
+        if(path[tmpNumOfStation] == 0){
+            printf("nessun percorso\n");
+            return;
+            }
+        arrival = route->next->location;
+    }
+for(int i = tmpNumOfStation; i<numOfStations-1;i++)
+    printf("%d ",path[i]);
+printf("%d",path[numOfStations-1]);
+free(path);
+printf("\n");
 }
 
 void destroyCar(int location, int distance, station *scanStation) {
