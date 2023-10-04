@@ -23,12 +23,6 @@ typedef struct path{
     struct path *prev;
 }path;
 
-typedef struct reversePath{
-    int* path;
-    struct reversePath *next;
-    struct reversePath *prev;
-}reversePath;
-
 void addStation(station *first, int locationToAdd, int numOfCarsToAdd,int max_car, int carsToAdd[512]);
 
 void deleteStation(int location, station *scanStation);
@@ -120,13 +114,14 @@ void planRoute(int distance, int arrival, station *firstStation) {
 
 void goBackRoute(int distance, int arrival, station *firstStation) {
     station* route = firstStation;
-    int numOfStations = 1;
+    //va creata la lista parallela sulla quale operare (vedi path), per poi implementare dijkstra
     while(route->location != arrival)
         route = route->next;
     while (route->location != distance){
         route = route->next;
-        numOfStations++;
+
         }
+
     }
 
 
