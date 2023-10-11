@@ -18,9 +18,9 @@ typedef struct station{
 } station;
 
 typedef struct path{
-    struct station *location;
-    struct path *next;
-    struct path *prev;
+    int location;
+    int max_dis;
+    bool visited;
 }path;
 
 void addStation(station *first, int locationToAdd, int numOfCarsToAdd,int max_car, int carsToAdd[512]);
@@ -46,7 +46,7 @@ int main(){
     station* pFirst = &firstStation;
     FILE *file_in;
     FILE *file_out;
-    file_in = freopen("archivio_test_aperti/open_2.txt", "r", stdin);
+    file_in = freopen("cmake-build-debug/archivio_test_aperti/open_3.txt", "r", stdin);
     file_out = freopen("outMio.txt","w",stdout);
 
     if(file_in == NULL)
@@ -114,15 +114,41 @@ void planRoute(int distance, int arrival, station *firstStation) {
 
 void goBackRoute(int distance, int arrival, station *firstStation) {
     station* route = firstStation;
+    int numOfStations = 1;
     //va creata la lista parallela sulla quale operare (vedi path), per poi implementare dijkstra
     while(route->location != arrival)
         route = route->next;
     while (route->location != distance){
         route = route->next;
-
+        numOfStations++;
         }
+    path returnPath[numOfStations];
+    int tmpNumOfStation = numOfStations-1;
+    while(route->location != arrival){
+        returnPath[tmpNumOfStation].location = route->location;
+        returnPath[tmpNumOfStation].max_dis = route->max_distance;
+        returnPath[tmpNumOfStation].visited = false;
+        tmpNumOfStation--;
+        route = route->prev;
+        }
+    returnPath[0].location = route->location;
+    returnPath[0].max_dis = route->max_distance;
+    int effectivePath[numOfStations];
+    effectivePath[numOfStations-1] = distance;
+    for(int i = numOfStations-1; i>=0; i--){
+        for(int j = i;returnPath[i].location-returnPath[i].max_dis;j--){
+            if(returnPath[j].visited){
+                if(!returnPath[j-1].visited){
+                    effectivePath[i] = returnPath[i].location;
+                    effectivePath[j] = returnPath[j].location;
 
+                }
+            }
+            else
+                returnPath[j].visited = true;
+        }
     }
+}
 
 
 void goOnRoute(int distance, int arrival, station *firstStation) {
