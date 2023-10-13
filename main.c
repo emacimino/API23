@@ -115,7 +115,7 @@ void planRoute(int distance, int arrival, station *firstStation) {
 void goBackRoute(int distance, int arrival, station *firstStation) {
     station* route = firstStation;
     int numOfStations = 1;
-    //va creata la lista parallela sulla quale operare (vedi path), per poi implementare dijkstra
+    //esploro la lista per segnarmi il numero di stazioni interessate O(k)
     while(route->location != arrival)
         route = route->next;
     while (route->location != distance){
@@ -124,6 +124,8 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
         }
     path returnPath[numOfStations];
     int tmpNumOfStation = numOfStations-1;
+    //torno indietro e assegno ogni stazione a un cella di un array lungo quanto il percorso e inizio a operare su quell'array
+    //con l'array ho una struttura di appoggio secondaria senza fare malloc
     while(route->location != arrival){
         returnPath[tmpNumOfStation].location = route->location;
         returnPath[tmpNumOfStation].max_dis = route->max_distance;
@@ -133,21 +135,21 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
         }
     returnPath[0].location = route->location;
     returnPath[0].max_dis = route->max_distance;
-    int effectivePath[numOfStations];
-    effectivePath[numOfStations-1] = distance;
-    for(int i = numOfStations-1; i>=0; i--){
-        for(int j = i;returnPath[i].location-returnPath[i].max_dis;j--){
-            if(returnPath[j].visited){
-                if(!returnPath[j-1].visited){
-                    effectivePath[i] = returnPath[i].location;
-                    effectivePath[j] = returnPath[j].location;
-
-                }
-            }
-            else
-                returnPath[j].visited = true;
-        }
+    //creo l'array che poi sarà il mio effettivo percorso da stampare
+    int dist[numOfStations], previous[numOfStations];
+    dist[numOfStations-1] = 0;
+    //-1 è utilizzato per simboleggiare l'infinito o l'indefinito
+    for (int i = 0; i < numOfStations-1; i++){
+        dist[i] = -1;
+        previous[i] = -1;
     }
+
+
+    if(returnPath[0].right_path == true){
+        //print path
+    }
+    else
+        printf("nessun percorso\n");
 }
 
 
