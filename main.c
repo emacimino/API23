@@ -20,6 +20,8 @@ typedef struct station{
 typedef struct path{
     int location;
     int max_dis;
+    int dijkstra_dist;
+    int dijkstra_pred;
     bool visited;
 }path;
 
@@ -31,7 +33,7 @@ void addCar(station *scanStation, int location, int distance);
 
 void destroyCar(int location, int distance, station *scanStation);
 
-void planRoute(int distance, int arrival, station *route);
+void planRoute(int distance, int arrival, station *firstStation);
 
 void initStructure(station *firstStation);
 
@@ -129,27 +131,41 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
     while(route->location != arrival){
         returnPath[tmpNumOfStation].location = route->location;
         returnPath[tmpNumOfStation].max_dis = route->max_distance;
+        returnPath[tmpNumOfStation].dijkstra_dist = numOfStations; //equal to infinity
+        returnPath[tmpNumOfStation].dijkstra_pred = numOfStations; //like null, here we will store the index of predecessors
         returnPath[tmpNumOfStation].visited = false;
         tmpNumOfStation--;
         route = route->prev;
         }
     returnPath[0].location = route->location;
     returnPath[0].max_dis = route->max_distance;
-    //creo l'array che poi sarà il mio effettivo percorso da stampare
-    int dist[numOfStations], previous[numOfStations];
-    dist[numOfStations-1] = 0;
-    //-1 è utilizzato per simboleggiare l'infinito o l'indefinito
-    for (int i = 0; i < numOfStations-1; i++){
-        dist[i] = -1;
-        previous[i] = -1;
-    }
+    returnPath[0].dijkstra_dist = 0;
+    returnPath[0].dijkstra_pred = -1;
+    returnPath[0].visited = false;
+    //initialized single source
 
 
-    if(returnPath[0].right_path == true){
-        //print path
+    tmpNumOfStation = numOfStations - 1;
+
+    while (!returnPath[0].visited){
+        int station = returnPath[tmpNumOfStation].location;
+        int station_max_dis = returnPath[tmpNumOfStation].max_dis;
+        int i = tmpNumOfStation - 1;
+        while (station - station_max_dis <= returnPath[i].location && returnPath[i].location >= arrival){
+            returnPath[i].visited = true;
+            returnPath[tmpNumOfStation].dijkstra_pred = i;
+            i--;
+        }
+        if (i == tmpNumOfStation - 1){
+            printf("nessun percorso\n");
+            return;
+        }
+        i++;
+        tmpNumOfStation = i;
     }
-    else
-        printf("nessun percorso\n");
+    for(int j = numOfStations-1; j >= 0; j = returnPath[j].dijkstra_pred)
+        printf("%d ",returnPath[j].location);
+    printf("\n");
 }
 
 
