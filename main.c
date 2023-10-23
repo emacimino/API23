@@ -25,7 +25,7 @@ typedef struct path{
     bool visited;
 }path;
 
-void addStation(station *first, int locationToAdd, int numOfCarsToAdd,int max_car, int carsToAdd[512]);
+void addStation(station *first);
 
 void deleteStation(int location, station *scanStation);
 
@@ -48,7 +48,7 @@ int main(){
     station* pFirst = &firstStation;
     FILE *file_in;
     FILE *file_out;
-    file_in = freopen("cmake-build-debug/archivio_test_aperti/open_3.txt", "r", stdin);
+    file_in = freopen("cmake-build-default/archivio_test_aperti/open_4.txt", "r", stdin);
     file_out = freopen("outMio.txt","w",stdout);
 
     if(file_in == NULL)
@@ -62,18 +62,9 @@ int main(){
 
     while (scanf("%s", input) != EOF) {
         if (strcmp(input, "aggiungi-stazione") == 0) {
-            if (scanf("%d %d", &location, &numOfCars) != EOF) {
-                int max_car = 0;
-                for (int i = 0; i < numOfCars; i++){
-                    scanf("%d", &tripDistance[i]);
-                    if(*(tripDistance+i)>max_car)
-                        max_car = *(tripDistance+i);
-                }
-                addStation(pFirst, location, numOfCars,max_car, tripDistance); //done, to debug
-                if(pFirst->prev != NULL){
-                    pFirst = pFirst->prev;
-                }
-
+            addStation(pFirst); //done, to debug
+            if(pFirst->prev != NULL){
+                pFirst = pFirst->prev;
             }
         }
         else if (strcmp(input, "demolisci-stazione") == 0) {
@@ -83,6 +74,7 @@ int main(){
         }
         else if (strcmp(input, "aggiungi-auto") == 0) {
             if (scanf("%d %d", &location, &distance)) {
+
                 addCar(pFirst, location, distance); //done, to debug
             }
         } else if (strcmp(input, "rottama-auto") == 0) {
@@ -168,7 +160,6 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
     printf("\n");
 }
 
-
 void goOnRoute(int distance, int arrival, station *firstStation) {
     //si potrebbe migliorare contando le stazioni e creando un array di appoggio invece di fare le malloc
     station* route = firstStation;
@@ -227,12 +218,28 @@ void destroyCar(int location, int distance, station *scanStation) {
 void addCar(station *scanStation, int location, int distance) { //seems to work
     while(scanStation != NULL ){
         if(scanStation->location == location){
+            //to test
+            printf ("old cars: ");
+            for(int j = 0;j<scanStation->car_number;j++)
+                printf("%d ",scanStation->cars[j]);
+            //to test
+            printf("\n");
+
             for (int i = 0; i <= scanStation->car_number; i ++){
-                if(i== scanStation->car_number){
-                    *(scanStation->cars + i) = distance;
+                if(i == scanStation->car_number){
+                    printf("%d",location);
+                    printf("\t");
+                    printf("%d",distance);
+                    printf("\n");
+                    scanStation->cars[i] = distance;
                     scanStation->car_number++;
-                    if(*(scanStation->cars+i)>scanStation->max_distance)
+                    if(scanStation->cars[i]>scanStation->max_distance)
                         scanStation->max_distance = *(scanStation->cars+i);
+                    //to test
+                    printf ("new cars: ");
+                    for(int j = 0;j<scanStation->car_number;j++)
+                        printf("%d ",scanStation->cars[j]);
+                    //to test
                     printf("aggiunta\n");
                     return;
                 }
@@ -257,42 +264,54 @@ void deleteStation(int location, station *scanStation) {
     printf("non demolita\n");
 }
 
-void addStation(station *first, int locationToAdd, int numOfCarsToAdd, int max_car, int *carsToAdd) { //seems to work
+void addStation(station *first) {
+    int locationToAdd,numOfCarsToAdd;
+    if (scanf("%d %d", &locationToAdd, &numOfCarsToAdd) != EOF){
+        //do nothing
+    }
     if(first->location == 0){
-        first->location = locationToAdd;
-        first->car_number = numOfCarsToAdd;
-        first->max_distance = max_car;
-        first->cars = calloc(512,sizeof (int));
-        if(first->car_number!=0)
-            memccpy(first->cars,carsToAdd,numOfCarsToAdd,sizeof (int));
+         first->location = locationToAdd;
+         first->car_number = numOfCarsToAdd;
+         first->max_distance = 0;
+         first->cars = calloc(512,sizeof (int));
+         for (int i = 0; i < first->car_number; i++){
+            scanf("%d", &first->cars[i]);
+            if(first->cars[i]>first->max_distance)
+                first->max_distance = first->cars[i];
+         }
         first->next = NULL;
         first->prev = NULL;
-        printf("aggiunta\n",stdout);
+        printf("aggiunta\n");
         return;
     }
     if(first->location > locationToAdd){
         station *tmp = malloc(sizeof (station));
         tmp->location = locationToAdd;
         tmp->car_number = numOfCarsToAdd;
+        tmp->max_distance = 0;
         tmp->cars = calloc(512,sizeof (int));
-        if(tmp->car_number!=0)
-            memccpy(tmp->cars,carsToAdd,numOfCarsToAdd,sizeof (int));
-        tmp->max_distance = max_car;
+        for (int i = 0; i < tmp->car_number; i++) {
+            scanf("%d", &tmp->cars[i]);
+            if (tmp->cars[i] > tmp->max_distance)
+                tmp->max_distance = tmp->cars[i];
+        }
         tmp->prev = NULL;
         tmp->next = first;
         first->prev = tmp;
-        printf("aggiunta\n",stdout);
+        printf("aggiunta\n");
         return;
     }
     else{
         station *tmp = malloc(sizeof (station));
         tmp->location = locationToAdd;
         tmp->car_number = numOfCarsToAdd;
+        tmp->max_distance = 0;
         tmp->cars = calloc(512,sizeof (int));
-        if(tmp->car_number!=0)
-            memccpy(tmp->cars,carsToAdd,numOfCarsToAdd,sizeof (int));
-        tmp->max_distance = max_car;
-
+        for (int i = 0; i < tmp->car_number; i++) {
+            scanf("%d", &tmp->cars[i]);
+            if (tmp->cars[i] > tmp->max_distance)
+                tmp->max_distance = tmp->cars[i];
+        }
         while(first != NULL ){
             if(first->location == locationToAdd){
                 printf("non aggiunta\n",stdout);
@@ -317,10 +336,3 @@ void addStation(station *first, int locationToAdd, int numOfCarsToAdd, int max_c
         }
     }
 }
-
-
-
-
-
-
-
