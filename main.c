@@ -48,7 +48,7 @@ int main(){
     station* pFirst = &firstStation;
     FILE *file_in;
     FILE *file_out;
-    file_in = freopen("cmake-build-default/archivio_test_aperti/open_4.txt", "r", stdin);
+    file_in = freopen("cmake-build-debug/archivio_test_aperti/open_11.txt", "r", stdin);
     file_out = freopen("outMio.txt","w",stdout);
 
     if(file_in == NULL)
@@ -74,7 +74,6 @@ int main(){
         }
         else if (strcmp(input, "aggiungi-auto") == 0) {
             if (scanf("%d %d", &location, &distance)) {
-
                 addCar(pFirst, location, distance); //done, to debug
             }
         } else if (strcmp(input, "rottama-auto") == 0) {
@@ -155,9 +154,9 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
         i++;
         tmpNumOfStation = i;
     }
-    for(int j = numOfStations-1; j >= 0; j = returnPath[j].dijkstra_pred)
+    for(int j = numOfStations-1; j > 0; j = returnPath[j].dijkstra_pred)
         printf("%d ",returnPath[j].location);
-    printf("\n");
+    printf("%d\n",returnPath[0].location);
 }
 
 void goOnRoute(int distance, int arrival, station *firstStation) {
@@ -195,20 +194,39 @@ printf("\n");
 
 void destroyCar(int location, int distance, station *scanStation) {
     bool destroyed = false;
-    while(scanStation->next != NULL ){
+    while(scanStation->next != NULL && scanStation->location <= location){
         if(scanStation->location == location){
+            /*to test
+            printf ("old cars: ");
+            for(int j = 0;j<scanStation->car_number;j++)
+                printf("%d ",scanStation->cars[j]);
+                printf("\n");
+            to test*/
+
             for (int i = 0; i <= scanStation->car_number; i++){
-                if(*(scanStation->cars + i) == distance && !destroyed){
-                    *(scanStation->cars + i) = 0;
-                    printf("rottamata\n");
+                if(scanStation->cars[i] == distance && !destroyed){
+                    if(i == scanStation->car_number)
+                        scanStation->cars[i] = 0;
+                    else
+                        scanStation->cars[i] = scanStation->cars[i+1];
+                    scanStation->car_number = scanStation->car_number-1;
                     destroyed = true;
-                    return;
+                    printf("rottamata\n");
                 }
-                if(destroyed){
-                    *(scanStation->cars + i) = *(scanStation->cars + i + 1);
+                else if (destroyed){
+                    if(i == scanStation->car_number)
+                        scanStation->cars[i] = 0;
+                    else
+                        scanStation->cars[i] = scanStation->cars[i+1];
                 }
             }
-            scanStation->car_number = scanStation->car_number-1;
+            /*to test
+            printf ("new cars: ");
+            for(int j = 0;j<scanStation->car_number;j++)
+                printf("%d ",scanStation->cars[j]);
+            printf("\n");
+            to test*/
+            return;
         }
         scanStation = scanStation->next;
     }
@@ -218,27 +236,27 @@ void destroyCar(int location, int distance, station *scanStation) {
 void addCar(station *scanStation, int location, int distance) { //seems to work
     while(scanStation != NULL ){
         if(scanStation->location == location){
-            //to test
+            /*to test
             printf ("old cars: ");
             for(int j = 0;j<scanStation->car_number;j++)
                 printf("%d ",scanStation->cars[j]);
-            //to test
-            printf("\n");
+            to test
+            printf("\n");*/
 
             for (int i = 0; i <= scanStation->car_number; i ++){
                 if(i == scanStation->car_number){
-                    printf("%d",location);
+                    /*printf("%d",location);
                     printf("\t");
                     printf("%d",distance);
-                    printf("\n");
+                    printf("\n");*/
                     scanStation->cars[i] = distance;
                     scanStation->car_number++;
                     if(scanStation->cars[i]>scanStation->max_distance)
                         scanStation->max_distance = *(scanStation->cars+i);
                     //to test
-                    printf ("new cars: ");
-                    for(int j = 0;j<scanStation->car_number;j++)
-                        printf("%d ",scanStation->cars[j]);
+                    //printf ("new cars: ");
+                    //for(int j = 0;j<scanStation->car_number;j++)
+                    //    printf("%d ",scanStation->cars[j]);
                     //to test
                     printf("aggiunta\n");
                     return;
