@@ -48,7 +48,7 @@ int main(){
     station* pFirst = &firstStation;
     FILE *file_in;
     FILE *file_out;
-    file_in = freopen("cmake-build-debug/archivio_test_aperti/open_11.txt", "r", stdin);
+    file_in = freopen("cmake-build-default/archivio_test_aperti/open_10.txt", "r", stdin);
     file_out = freopen("outMio.txt","w",stdout);
 
     if(file_in == NULL)
