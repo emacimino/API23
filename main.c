@@ -48,7 +48,7 @@ int main(){
     station* pFirst = &firstStation;
     FILE *file_in;
     FILE *file_out;
-    file_in = freopen("cmake-build-default/archivio_test_aperti/open_10.txt", "r", stdin);
+    file_in = freopen("cmake-build-default/archivio_test_aperti/open_13.txt", "r", stdin);
     file_out = freopen("outMio.txt","w",stdout);
 
     if(file_in == NULL)
@@ -109,6 +109,10 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
     station* route = firstStation;
     int numOfStations = 1;
     //esploro la lista per segnarmi il numero di stazioni interessate O(k)
+    if(arrival<route->location){
+        printf("nessun percorso\n");
+        return;
+    }
     while(route->location != arrival)
         route = route->next;
     while (route->location != distance){
@@ -201,11 +205,11 @@ void destroyCar(int location, int distance, station *scanStation) {
             for(int j = 0;j<scanStation->car_number;j++)
                 printf("%d ",scanStation->cars[j]);
                 printf("\n");
-            to test*/
+            //to test*/
 
-            for (int i = 0; i <= scanStation->car_number; i++){
+            for (int i = 0; i < scanStation->car_number; i++){
                 if(scanStation->cars[i] == distance && !destroyed){
-                    if(i == scanStation->car_number)
+                    if(i == scanStation->car_number - 1)
                         scanStation->cars[i] = 0;
                     else
                         scanStation->cars[i] = scanStation->cars[i+1];
@@ -214,12 +218,14 @@ void destroyCar(int location, int distance, station *scanStation) {
                     printf("rottamata\n");
                 }
                 else if (destroyed){
-                    if(i == scanStation->car_number)
+                    if(i == scanStation->car_number - 1)
                         scanStation->cars[i] = 0;
                     else
                         scanStation->cars[i] = scanStation->cars[i+1];
                 }
             }
+            if(!destroyed)
+                printf("non rottamata\n");
             /*to test
             printf ("new cars: ");
             for(int j = 0;j<scanStation->car_number;j++)
@@ -287,6 +293,7 @@ void addStation(station *first) {
     if (scanf("%d %d", &locationToAdd, &numOfCarsToAdd) != EOF){
         //do nothing
     }
+    //caso base lista vuota
     if(first->location == 0){
          first->location = locationToAdd;
          first->car_number = numOfCarsToAdd;
@@ -302,6 +309,7 @@ void addStation(station *first) {
         printf("aggiunta\n");
         return;
     }
+    //caso di inserimento in mezzo
     if(first->location > locationToAdd){
         station *tmp = malloc(sizeof (station));
         tmp->location = locationToAdd;
