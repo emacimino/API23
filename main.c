@@ -23,7 +23,7 @@ typedef struct path{
     int dijkstra_dist;
     int dijkstra_pred;
     bool visited;
-}path;
+} path;
 
 void addStation(station *first);
 
@@ -48,7 +48,7 @@ int main(){
     station* pFirst = &firstStation;
     FILE *file_in;
     FILE *file_out;
-    file_in = freopen("cmake-build-default/archivio_test_aperti/open_13.txt", "r", stdin);
+    file_in = freopen("cmake-build-default/archivio_test_aperti/open_107.txt", "r", stdin);
     file_out = freopen("outMio.txt","w",stdout);
 
     if(file_in == NULL)
@@ -92,7 +92,7 @@ int main(){
 void initStructure(station *firstStation) {
     firstStation->next = NULL;
     firstStation->prev = NULL;
-    firstStation->location = 0;
+    firstStation->location = -1;
     firstStation->car_number = 0;
     firstStation->cars = calloc(512,sizeof (int));
     firstStation->max_distance = 0;
@@ -169,32 +169,31 @@ void goOnRoute(int distance, int arrival, station *firstStation) {
     int numOfStations = 1;
     while(route->location != distance)
         route = route->next;
-    while (route->location != arrival){
-        route = route->next;
-        numOfStations++;
-    }
+
     int *path = calloc(numOfStations, sizeof(int));
-    route = route->prev;
     int tmpNumOfStation = numOfStations-1;
     path[tmpNumOfStation] = arrival;
-    while(distance < arrival) {
+
+    while(distance < arrival){
+        station* walk = route;
         tmpNumOfStation--;
-        while (route->location + route->max_distance >= arrival && route->location >= distance) {
-            path[tmpNumOfStation] = route->location;
-            route = route->prev;
+        while (walk->location + walk->max_distance <= arrival) {
+            walk = walk->next;
+        }
+        if(walk->location + walk->max_distance >= arrival){
+            path[tmpNumOfStation] = walk->location;
         }
         if(path[tmpNumOfStation] == 0){
             printf("nessun percorso\n");
             return;
-            }
-        arrival = route->next->location;
+        }
+        arrival = walk->location;
     }
 for(int i = tmpNumOfStation; i<numOfStations-1;i++)
     printf("%d ",path[i]);
 printf("%d",path[numOfStations-1]);
-free(path);
 printf("\n");
-}
+} //works pretty well
 
 void destroyCar(int location, int distance, station *scanStation) {
     bool destroyed = false;
@@ -246,9 +245,8 @@ void addCar(station *scanStation, int location, int distance) { //seems to work
             printf ("old cars: ");
             for(int j = 0;j<scanStation->car_number;j++)
                 printf("%d ",scanStation->cars[j]);
-            to test
-            printf("\n");*/
-
+            printf("\n");
+            //to test*/
             for (int i = 0; i <= scanStation->car_number; i ++){
                 if(i == scanStation->car_number){
                     /*printf("%d",location);
@@ -258,12 +256,15 @@ void addCar(station *scanStation, int location, int distance) { //seems to work
                     scanStation->cars[i] = distance;
                     scanStation->car_number++;
                     if(scanStation->cars[i]>scanStation->max_distance)
-                        scanStation->max_distance = *(scanStation->cars+i);
-                    //to test
-                    //printf ("new cars: ");
-                    //for(int j = 0;j<scanStation->car_number;j++)
-                    //    printf("%d ",scanStation->cars[j]);
-                    //to test
+                        scanStation->max_distance = scanStation->cars[i];
+                    /*to test
+                    printf ("new cars: ");
+                    for(int j = 0;j<scanStation->car_number;j++)
+                        printf("%d ",scanStation->cars[j]);
+                    printf("\nmax: %d\n",scanStation->max_distance);
+
+                    //to test*/
+
                     printf("aggiunta\n");
                     return;
                 }
@@ -272,29 +273,33 @@ void addCar(station *scanStation, int location, int distance) { //seems to work
         scanStation = scanStation->next;
     }
     printf("non aggiunta\n");
-}
+} //works quite good
 
 void deleteStation(int location, station *scanStation) {
     while(scanStation->next != NULL ){
         if(scanStation->location == location){
             station *tmp = scanStation;
-            scanStation->next->prev = scanStation->prev;
+            scanStation->next->prev = tmp->prev;
+            scanStation->prev->next = tmp->next;
             printf("demolita\n");
-            free(tmp);
             return;
         }
         scanStation = scanStation->next;
     }
     printf("non demolita\n");
-}
+} //need to look at the free() but it works
 
 void addStation(station *first) {
     int locationToAdd,numOfCarsToAdd;
     if (scanf("%d %d", &locationToAdd, &numOfCarsToAdd) != EOF){
         //do nothing
     }
+    else{
+        printf("scanf not working in addStation");
+        return;
+    }
     //caso base lista vuota
-    if(first->location == 0){
+    if(first->location == -1){
          first->location = locationToAdd;
          first->car_number = numOfCarsToAdd;
          first->max_distance = 0;
@@ -332,7 +337,7 @@ void addStation(station *first) {
         tmp->location = locationToAdd;
         tmp->car_number = numOfCarsToAdd;
         tmp->max_distance = 0;
-        tmp->cars = calloc(512,sizeof (int));
+        tmp->cars = calloc(512,sizeof (int)); //tmp->next = NULL;        tmp->prev = NULL;
         for (int i = 0; i < tmp->car_number; i++) {
             scanf("%d", &tmp->cars[i]);
             if (tmp->cars[i] > tmp->max_distance)
