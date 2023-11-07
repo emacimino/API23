@@ -48,7 +48,7 @@ int main(){
     station* pFirst = &firstStation;
     FILE *file_in;
     FILE *file_out;
-    file_in = freopen("cmake-build-default/archivio_test_aperti/open_107.txt", "r", stdin);
+    file_in = freopen("cmake-build-debug/archivio_test_aperti/open_13.txt", "r", stdin);
     file_out = freopen("outMio.txt","w",stdout);
 
     if(file_in == NULL)
@@ -56,8 +56,7 @@ int main(){
 
 
     char input[COMMAND_LENGTH];
-    int location, numOfCars, distance, arrival;
-    int tripDistance[MAX_CAR];
+    int location, distance, arrival;
 
 
     while (scanf("%s", input) != EOF) {
@@ -165,6 +164,7 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
 
 void goOnRoute(int distance, int arrival, station *firstStation) {
     //si potrebbe migliorare contando le stazioni e creando un array di appoggio invece di fare le malloc
+    //da rivedere l'array con posizioni negative
     station* route = firstStation;
     int numOfStations = 1;
     while(route->location != distance)
@@ -180,7 +180,11 @@ void goOnRoute(int distance, int arrival, station *firstStation) {
         while (walk->location + walk->max_distance <= arrival) {
             walk = walk->next;
         }
-        if(walk->location + walk->max_distance >= arrival){
+        if(walk->prev->location + walk->prev->max_distance == arrival){ //in teoria non gestiamo se arriviamo dopo arrival e arrival.distance è 0
+            walk = walk->prev;
+            path[tmpNumOfStation] = walk->location;
+        }
+        if(walk->location + walk->max_distance > arrival){
             path[tmpNumOfStation] = walk->location;
         }
         if(path[tmpNumOfStation] == 0){
