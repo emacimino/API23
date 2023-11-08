@@ -48,17 +48,16 @@ int main(){
     station* pFirst = &firstStation;
     FILE *file_in;
     FILE *file_out;
-    file_in = freopen("cmake-build-default/archivio_test_aperti/open_30.txt", "r", stdin);
+    file_in = freopen("cmake-build-debug/archivio_test_aperti/open_13.txt", "r", stdin);
     file_out = freopen("outMio.txt","w",stdout);
 
     if(file_in == NULL)
         return 2;
-    if(file_out == NULL)
-        return 1;
 
 
     char input[COMMAND_LENGTH];
     int location, distance, arrival;
+
 
 
     while (scanf("%s", input) != EOF) {
@@ -250,9 +249,6 @@ void destroyCar(int location, int distance, station *scanStation) {
             }
             if(!destroyed)
                 printf("non rottamata\n");
-
-
-
             /*to test
             if(scanStation->location == 2223){
                             printf ("new cars: ");
@@ -407,12 +403,6 @@ void addStation(station *first) {
             if (tmp->cars[i] > tmp->max_distance)
                 tmp->max_distance = tmp->cars[i];
         }
-        /*if(tmp->location == 2223){
-            for(int j = 0;j<tmp->car_number;j++)
-                printf("%d ",tmp->cars[j]);
-            printf("\nmax: %d\n",tmp->max_distance);
-
-        }*/
         while(first != NULL ){
             if(first->location == locationToAdd){
                 printf("non aggiunta\n",stdout);
