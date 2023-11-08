@@ -2,4 +2,4 @@
 /main.exe
 /cmake-build-debug/
 /outMio.txt
-cmake-build-debug/CMakeFiles/CMakeLists.txt
+CMakeLists.txt
