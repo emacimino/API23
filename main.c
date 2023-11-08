@@ -48,16 +48,17 @@ int main(){
     station* pFirst = &firstStation;
     FILE *file_in;
     FILE *file_out;
-    file_in = freopen("cmake-build-default/archivio_test_aperti/open_107.txt", "r", stdin);
+    file_in = freopen("cmake-build-default/archivio_test_aperti/open_30.txt", "r", stdin);
     file_out = freopen("outMio.txt","w",stdout);
 
     if(file_in == NULL)
         return 2;
+    if(file_out == NULL)
+        return 1;
 
 
     char input[COMMAND_LENGTH];
-    int location, numOfCars, distance, arrival;
-    int tripDistance[MAX_CAR];
+    int location, distance, arrival;
 
 
     while (scanf("%s", input) != EOF) {
@@ -70,6 +71,12 @@ int main(){
         else if (strcmp(input, "demolisci-stazione") == 0) {
             if (scanf("%d", &location) != EOF) {
                 deleteStation(location,pFirst); //done, to debug
+            }
+            if(pFirst->location == -1234){
+                station* tmp = pFirst;
+                pFirst = pFirst->next;
+                pFirst->prev = NULL;
+
             }
         }
         else if (strcmp(input, "aggiungi-auto") == 0) {
@@ -109,7 +116,7 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
     station* route = firstStation;
     int numOfStations = 1;
     //esploro la lista per segnarmi il numero di stazioni interessate O(k)
-    if(arrival<route->location){
+    if(arrival < route->location){
         printf("nessun percorso\n");
         return;
     }
@@ -170,21 +177,37 @@ void goOnRoute(int distance, int arrival, station *firstStation) {
     while(route->location != distance)
         route = route->next;
 
+    //facciamo una prima iterazione per poi costruire l'array
+    station* walk = route;
+    while (walk->location + walk->max_distance < arrival && walk->location < arrival) {
+        walk = walk->next;
+        numOfStations++;
+    }
+    if(walk->location == arrival){
+        printf("nessun percorso\n");
+        return;
+    }
+
     int *path = calloc(numOfStations, sizeof(int));
-    int tmpNumOfStation = numOfStations-1;
+    int tmpNumOfStation = numOfStations - 1;
     path[tmpNumOfStation] = arrival;
+    tmpNumOfStation--;
+    path[tmpNumOfStation] = walk->location;
+    arrival = walk->location;
+
 
     while(distance < arrival){
-        station* walk = route;
+        walk = route;
         tmpNumOfStation--;
-        while (walk->location + walk->max_distance <= arrival) {
+        while (walk->location + walk->max_distance < arrival && walk->location < arrival) {
             walk = walk->next;
         }
-        if(walk->location + walk->max_distance >= arrival){
+        if(walk->location + walk->max_distance >= arrival && walk->location < arrival ){
             path[tmpNumOfStation] = walk->location;
         }
-        if(path[tmpNumOfStation] == 0){
-            printf("nessun percorso\n");
+        if(path[tmpNumOfStation] == 0 && walk->location != 0){
+            if(walk->location + walk->max_distance < arrival && walk->location < arrival) //non troppo sicuro di ciò ma dovrebbe funzionare
+                printf("nessun percorso\n");
             return;
         }
         arrival = walk->location;
@@ -198,13 +221,15 @@ printf("\n");
 void destroyCar(int location, int distance, station *scanStation) {
     bool destroyed = false;
     while(scanStation->next != NULL && scanStation->location <= location){
-        if(scanStation->location == location){
-            /*to test
+        /*to test
+        if(scanStation->location == 2223){
             printf ("old cars: ");
             for(int j = 0;j<scanStation->car_number;j++)
                 printf("%d ",scanStation->cars[j]);
-                printf("\n");
-            //to test*/
+            printf("\n");
+        }
+        to test*/
+        if(scanStation->location == location){
 
             for (int i = 0; i < scanStation->car_number; i++){
                 if(scanStation->cars[i] == distance && !destroyed){
@@ -225,15 +250,42 @@ void destroyCar(int location, int distance, station *scanStation) {
             }
             if(!destroyed)
                 printf("non rottamata\n");
+
+
+
             /*to test
-            printf ("new cars: ");
-            for(int j = 0;j<scanStation->car_number;j++)
-                printf("%d ",scanStation->cars[j]);
-            printf("\n");
+            if(scanStation->location == 2223){
+                            printf ("new cars: ");
+                            for(int j = 0;j<scanStation->car_number;j++)
+                                printf("%d ",scanStation->cars[j]);
+                            printf("\n");
+                        }
             to test*/
             return;
         }
         scanStation = scanStation->next;
+    }
+    if(scanStation->next == NULL && scanStation->location == location){
+        for (int i = 0; i < scanStation->car_number; i++){
+            if(scanStation->cars[i] == distance && !destroyed){
+                if(i == scanStation->car_number - 1)
+                    scanStation->cars[i] = 0;
+                else
+                    scanStation->cars[i] = scanStation->cars[i+1];
+                scanStation->car_number = scanStation->car_number-1;
+                destroyed = true;
+                printf("rottamata\n");
+            }
+            else if (destroyed){
+                if(i == scanStation->car_number - 1)
+                    scanStation->cars[i] = 0;
+                else
+                    scanStation->cars[i] = scanStation->cars[i+1];
+            }
+        }
+        if(!destroyed)
+            printf("non rottamata\n");
+        return;
     }
     printf("non rottamata\n");
 }
@@ -280,11 +332,21 @@ void deleteStation(int location, station *scanStation) {
         if(scanStation->location == location){
             station *tmp = scanStation;
             scanStation->next->prev = tmp->prev;
-            scanStation->prev->next = tmp->next;
+            if(scanStation->prev != NULL)
+                scanStation->prev->next = tmp->next;
+            else
+                scanStation->location = -1234;
             printf("demolita\n");
             return;
         }
         scanStation = scanStation->next;
+    }
+    if(scanStation->location == location){
+        station *tmp = scanStation;
+        scanStation->prev->next = NULL;
+        printf("demolita\n");
+        free(tmp);
+        return;
     }
     printf("non demolita\n");
 } //need to look at the free() but it works
@@ -305,9 +367,11 @@ void addStation(station *first) {
          first->max_distance = 0;
          first->cars = calloc(512,sizeof (int));
          for (int i = 0; i < first->car_number; i++){
-            scanf("%d", &first->cars[i]);
-            if(first->cars[i]>first->max_distance)
-                first->max_distance = first->cars[i];
+            if(scanf("%d", &first->cars[i])){
+                if(first->cars[i]>first->max_distance)
+                    first->max_distance = first->cars[i];
+            }
+
          }
         first->next = NULL;
         first->prev = NULL;
@@ -343,6 +407,12 @@ void addStation(station *first) {
             if (tmp->cars[i] > tmp->max_distance)
                 tmp->max_distance = tmp->cars[i];
         }
+        /*if(tmp->location == 2223){
+            for(int j = 0;j<tmp->car_number;j++)
+                printf("%d ",tmp->cars[j]);
+            printf("\nmax: %d\n",tmp->max_distance);
+
+        }*/
         while(first != NULL ){
             if(first->location == locationToAdd){
                 printf("non aggiunta\n",stdout);
