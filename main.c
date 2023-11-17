@@ -54,7 +54,7 @@ int main(){
     station* pFirst = &firstStation;
     FILE *file_in;
     FILE *file_out;
-    file_in = freopen("cmake-build-release/archivio_test_aperti/open_17.txt", "r", stdin);
+    file_in = freopen("cmake-build-release/archivio_test_aperti/open_21.txt", "r", stdin);
     file_out = freopen("outMio.txt","w",stdout);
 
     if(file_in == NULL)
@@ -225,9 +225,7 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
 
             }
         }
-        if(goBackFreeway[tmpStation].dijkstra_pred == 0){
-            routePresent = true;
-        }
+
     }
 
 
@@ -255,17 +253,24 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
         routeToPrint[j].location = goBackFreeway[j].location;
     }
 */
+    int pred = numOfStations-1;
+    for(int j = goBackFreeway[numOfStations-1].dijkstra_pred; j > 0; j = goBackFreeway[j].dijkstra_pred){
+          if(j == pred){
+              printf("nessun percorso\n");
+              return;
+          }
+          pred = j;
+    }
 
-    if(routePresent){
+
         for(int j = numOfStations-1; j > 0; j = goBackFreeway[j].dijkstra_pred){
             printf("%d ", goBackFreeway[j].location);
             if(goBackFreeway[j].dijkstra_pred == 0)
                 printf("%d\n", goBackFreeway[0].location);
-
         }
-    }
-    else
-        printf("nessun percorso\n");
+
+
+
 
 
 
