@@ -1,5 +1,6 @@
 /cmake-build-default/
 /main.exe
 /cmake-build-debug/
+/cmake-build-release/
 /outMio.txt
 CMakeLists.txt

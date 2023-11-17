@@ -20,10 +20,16 @@ typedef struct station{
 typedef struct path{
     int location;
     int max_dis;
-    int dijkstra_dist;
+    int dijkstra_succ;
     int dijkstra_pred;
     bool visited;
 } path;
+
+typedef struct dijkstraStruct{
+    struct station* autogrill;
+    struct station *next;
+    struct station *prev;
+} dijkstraStruct;
 
 void addStation(station *first);
 
@@ -48,17 +54,14 @@ int main(){
     station* pFirst = &firstStation;
     FILE *file_in;
     FILE *file_out;
-    file_in = freopen("cmake-build-debug/archivio_test_aperti/open_13.txt", "r", stdin);
+    file_in = freopen("cmake-build-release/archivio_test_aperti/open_17.txt", "r", stdin);
     file_out = freopen("outMio.txt","w",stdout);
 
     if(file_in == NULL)
         return 2;
 
-
     char input[COMMAND_LENGTH];
     int location, distance, arrival;
-
-
 
     while (scanf("%s", input) != EOF) {
         if (strcmp(input, "aggiungi-stazione") == 0) {
@@ -113,6 +116,7 @@ void planRoute(int distance, int arrival, station *firstStation) {
 
 void goBackRoute(int distance, int arrival, station *firstStation) {
     station* route = firstStation;
+
     int numOfStations = 1;
     //esploro la lista per segnarmi il numero di stazioni interessate O(k)
     if(arrival < route->location){
@@ -121,40 +125,119 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
     }
     while(route->location != arrival)
         route = route->next;
+
+    while (route->location != distance){
+        route = route->next;
+        numOfStations++;
+    }
+
     while (route->location != distance){
         route = route->next;
         numOfStations++;
         }
-    path returnPath[numOfStations];
+    path goBackFreeway[numOfStations];
     int tmpNumOfStation = numOfStations-1;
     //torno indietro e assegno ogni stazione a un cella di un array lungo quanto il percorso e inizio a operare su quell'array
     //con l'array ho una struttura di appoggio secondaria senza fare malloc
     while(route->location != arrival){
-        returnPath[tmpNumOfStation].location = route->location;
-        returnPath[tmpNumOfStation].max_dis = route->max_distance;
-        returnPath[tmpNumOfStation].dijkstra_dist = numOfStations; //equal to infinity
-        returnPath[tmpNumOfStation].dijkstra_pred = numOfStations; //like null, here we will store the index of predecessors
-        returnPath[tmpNumOfStation].visited = false;
+        goBackFreeway[tmpNumOfStation].location = route->location;
+        goBackFreeway[tmpNumOfStation].max_dis = route->max_distance;
+        goBackFreeway[tmpNumOfStation].dijkstra_succ = numOfStations; //equal to infinity
+        goBackFreeway[tmpNumOfStation].dijkstra_pred = numOfStations; //like null, here we will store the index of predecessors
+        goBackFreeway[tmpNumOfStation].visited = false;
         tmpNumOfStation--;
         route = route->prev;
         }
-    returnPath[0].location = route->location;
-    returnPath[0].max_dis = route->max_distance;
-    returnPath[0].dijkstra_dist = 0;
-    returnPath[0].dijkstra_pred = -1;
-    returnPath[0].visited = false;
+    goBackFreeway[0].location = route->location;
+    goBackFreeway[0].max_dis = route->max_distance;
+    goBackFreeway[0].dijkstra_succ = numOfStations;
+    goBackFreeway[0].dijkstra_pred = numOfStations;
+    goBackFreeway[0].visited = false;
     //initialized single source
 
 
-    tmpNumOfStation = numOfStations - 1;
+    //tmpNumOfStation = numOfStations - 1;
+    int max_arrival_index = tmpNumOfStation;
+    int max_arrival_station = 0;
+    // questi due indici servono per tener conto del massimo arrivo al giro precedente in modo da decidere
+    // se saltare del tutto la visita di una stazione
+    //ovvero controllo prima di scorrere se la stazione può portare a stazioni più piccole di quelle già raggiunte
 
-    while (!returnPath[0].visited){
-        int station = returnPath[tmpNumOfStation].location;
-        int station_max_dis = returnPath[tmpNumOfStation].max_dis;
+    int i;
+    bool routePresent;
+/*while (tmpNumOfStation >= 0){
+
+        int station = goBackFreeway[tmpNumOfStation].location;
+        int station_max_dis = goBackFreeway[tmpNumOfStation].max_dis;
+
+        max_arrival_station = station - station_max_dis; //segno dove posso arrivare con questa stazione
+        while(goBackFreeway[max_arrival_index].location < max_arrival_station){ //invariante banalmente non vero la prima volta
+            tmpNumOfStation--;
+            max_arrival_station = goBackFreeway[tmpNumOfStation].location - goBackFreeway[tmpNumOfStation].max_dis;
+        }
+        i = tmpNumOfStation-1;
+        int max_arrival_tmp = goBackFreeway[tmpNumOfStation].location;
+        while (max_arrival_station <= goBackFreeway[i].location && goBackFreeway[i].location >= arrival){
+
+            if(goBackFreeway[i].location - goBackFreeway[i].max_dis <= max_arrival_station && goBackFreeway[tmpNumOfStation].dijkstra_pred != 0){
+                if(goBackFreeway[i].location - goBackFreeway[i].max_dis <max_arrival_tmp){
+                    goBackFreeway[tmpNumOfStation].dijkstra_pred = i;
+                    max_arrival_index = i;
+                    max_arrival_tmp = goBackFreeway[i].location - goBackFreeway[i].max_dis;
+                }
+
+
+            }
+            i--;
+
+            if(goBackFreeway[tmpNumOfStation].dijkstra_pred == 0){
+                routePresent = true;
+            }
+        }
+
+
+    tmpNumOfStation--;
+}*/
+    routePresent = false;
+
+    for(int tmpStation = numOfStations-1; tmpStation > 0; tmpStation--){
+
+        max_arrival_station = goBackFreeway[tmpStation].location - goBackFreeway[tmpStation].max_dis;
+
+        int min_index = tmpStation;
+        while(goBackFreeway[min_index-1].location >= max_arrival_station)
+            min_index--;
+
+        int tmp_min_reach = min_index;
+        for( int j = tmpStation - 1; j >= min_index; j-- ){
+            if(goBackFreeway[j].location - goBackFreeway[j].max_dis < goBackFreeway[min_index].location){
+                int min_reachable_from_station = min_index;
+                while(goBackFreeway[j].location - goBackFreeway[j].max_dis < goBackFreeway[min_reachable_from_station-1].location){
+                    min_reachable_from_station--;
+                }
+
+
+                if(min_reachable_from_station <= tmp_min_reach){
+                    goBackFreeway[tmpStation].dijkstra_pred = j;
+                    goBackFreeway[j].dijkstra_pred = min_reachable_from_station;
+                    tmp_min_reach = min_reachable_from_station;
+                }
+
+            }
+        }
+        if(goBackFreeway[tmpStation].dijkstra_pred == 0){
+            routePresent = true;
+        }
+    }
+
+
+    /*while (!goBackFreeway[0].visited){ //questa condizione del while non è corretta
+        int station = goBackFreeway[tmpNumOfStation].location;
+        int station_max_dis = goBackFreeway[tmpNumOfStation].max_dis;
         int i = tmpNumOfStation - 1;
-        while (station - station_max_dis <= returnPath[i].location && returnPath[i].location >= arrival){
-            returnPath[i].visited = true;
-            returnPath[tmpNumOfStation].dijkstra_pred = i;
+        while (station - station_max_dis <= goBackFreeway[i].location && goBackFreeway[i].location >= arrival){
+            goBackFreeway[i].visited = true;
+            goBackFreeway[tmpNumOfStation].dijkstra_pred = i;
             i--;
         }
         if (i == tmpNumOfStation - 1){
@@ -163,10 +246,31 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
         }
         i++;
         tmpNumOfStation = i;
+    }*/
+    /*
+    path routeToPrint[numOfStations];
+
+    for(int j = numOfStations-1; j >= 0; j = goBackFreeway[j].dijkstra_pred){
+        routeToPrint[j].dijkstra_pred = goBackFreeway[j].dijkstra_pred;
+        routeToPrint[j].location = goBackFreeway[j].location;
     }
-    for(int j = numOfStations-1; j > 0; j = returnPath[j].dijkstra_pred)
-        printf("%d ",returnPath[j].location);
-    printf("%d\n",returnPath[0].location);
+*/
+
+    if(routePresent){
+        for(int j = numOfStations-1; j > 0; j = goBackFreeway[j].dijkstra_pred){
+            printf("%d ", goBackFreeway[j].location);
+            if(goBackFreeway[j].dijkstra_pred == 0)
+                printf("%d\n", goBackFreeway[0].location);
+
+        }
+    }
+    else
+        printf("nessun percorso\n");
+
+
+
+
+
 }
 
 void goOnRoute(int distance, int arrival, station *firstStation) {
@@ -205,8 +309,8 @@ void goOnRoute(int distance, int arrival, station *firstStation) {
             path[tmpNumOfStation] = walk->location;
         }
         if(path[tmpNumOfStation] == 0 && walk->location != 0){
-            if(walk->location + walk->max_distance < arrival && walk->location < arrival) //non troppo sicuro di ciò ma dovrebbe funzionare
-                printf("nessun percorso\n");
+            //if(walk->location + walk->max_distance < arrival && walk->location < arrival) //non troppo sicuro di ciò ma dovrebbe funzionare
+            printf("nessun percorso\n");
             return;
         }
         arrival = walk->location;
