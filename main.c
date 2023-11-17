@@ -54,7 +54,7 @@ int main(){
     station* pFirst = &firstStation;
     FILE *file_in;
     FILE *file_out;
-    file_in = freopen("cmake-build-release/archivio_test_aperti/open_21.txt", "r", stdin);
+    file_in = freopen("cmake-build-release/archivio_test_aperti/open_24.txt", "r", stdin);
     file_out = freopen("outMio.txt","w",stdout);
 
     if(file_in == NULL)
@@ -205,7 +205,7 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
         max_arrival_station = goBackFreeway[tmpStation].location - goBackFreeway[tmpStation].max_dis;
 
         int min_index = tmpStation;
-        while(goBackFreeway[min_index-1].location >= max_arrival_station)
+        while(goBackFreeway[min_index-1].location >= max_arrival_station && min_index >= 1)
             min_index--;
 
         int tmp_min_reach = min_index;
