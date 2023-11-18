@@ -54,7 +54,7 @@ int main(){
     station* pFirst = &firstStation;
     FILE *file_in;
     FILE *file_out;
-    file_in = freopen("cmake-build-release/archivio_test_aperti/open_24.txt", "r", stdin);
+    file_in = freopen("cmake-build-release/archivio_test_aperti/open_43.txt", "r", stdin);
     file_out = freopen("outMio.txt","w",stdout);
 
     if(file_in == NULL)
@@ -163,8 +163,6 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
     // se saltare del tutto la visita di una stazione
     //ovvero controllo prima di scorrere se la stazione può portare a stazioni più piccole di quelle già raggiunte
 
-    int i;
-    bool routePresent;
 /*while (tmpNumOfStation >= 0){
 
         int station = goBackFreeway[tmpNumOfStation].location;
@@ -198,7 +196,7 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
 
     tmpNumOfStation--;
 }*/
-    routePresent = false;
+
 
     for(int tmpStation = numOfStations-1; tmpStation > 0; tmpStation--){
 
@@ -255,7 +253,7 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
 */
     int pred = numOfStations-1;
     for(int j = goBackFreeway[numOfStations-1].dijkstra_pred; j > 0; j = goBackFreeway[j].dijkstra_pred){
-          if(j == pred){
+          if(j == pred || j == numOfStations){
               printf("nessun percorso\n");
               return;
           }
