@@ -18,7 +18,8 @@ typedef struct station{
 typedef struct path{
     int location;
     int max_dis;
-    int dijkstra_pred;
+    int pred;
+    int next;
 } path;
 
 
@@ -46,7 +47,7 @@ int main(){
     station* pFirst = &firstStation;
     FILE *file_in;
     FILE *file_out;
-    file_in = freopen("cmake-build-default/archivio_test_aperti/open_49.txt", "r", stdin);
+    file_in = freopen("cmake-build-default/archivio_test_aperti/open_88.txt", "r", stdin);
     file_out = freopen("outMio.txt","w",stdout);
 
     if(file_in == NULL)
@@ -64,13 +65,11 @@ int main(){
         }
         else if (strcmp(input, "demolisci-stazione") == 0) {
             if (scanf("%d", &location) != EOF) {
-                deleteStation(location,pFirst); //done, to debug
-            }
-            if(pFirst->location == -1234){
-                station* tmp = pFirst;
-                pFirst = pFirst->next;
-                pFirst->prev = NULL;
-
+                deleteStation(location,pFirst);//done, to debug
+                if(pFirst->location == -1234){
+                    pFirst = pFirst->next;
+                    pFirst->prev = NULL;
+                }
             }
         }
         else if (strcmp(input, "aggiungi-auto") == 0) {
@@ -115,6 +114,7 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
         printf("nessun percorso\n");
         return;
     }
+
     while(route->location != arrival)
         route = route->next;
 
@@ -133,13 +133,18 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
 
     //torno indietro e assegno ogni stazione a un cella di un array lungo quanto il percorso e inizio a operare su quell'array
     //con l'array ho una struttura di appoggio secondaria senza fare malloc
-    while(route->location >= arrival){
+    while(route->location != arrival){
         goBackFreeway[tmpNumOfStation].location = route->location;
         goBackFreeway[tmpNumOfStation].max_dis = route->max_distance;
-        goBackFreeway[tmpNumOfStation].dijkstra_pred = numOfStations; //like null, here we will store the index of predecessors
+        goBackFreeway[tmpNumOfStation].pred = numOfStations; //like null, here we will store the index of predecessors
+        goBackFreeway[tmpNumOfStation].next = numOfStations;
         tmpNumOfStation--;
         route = route->prev;
         }
+    goBackFreeway[tmpNumOfStation].location = route->location;
+    goBackFreeway[tmpNumOfStation].max_dis = route->max_distance;
+    goBackFreeway[tmpNumOfStation].pred = numOfStations; //like null, here we will store the index of predecessors
+    goBackFreeway[tmpNumOfStation].next = numOfStations;
     //initialized single source
 
     // questi due indici servono per tener conto del massimo arrivo al giro precedente in modo da decidere
@@ -148,13 +153,13 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
     int tmp_min_index = numOfStations - 1;
     int tmpStation = numOfStations - 1;
     int tmp_min = numOfStations - 1;
-    for(int i = tmpStation - 1; goBackFreeway[i].location >= goBackFreeway[tmpStation].location - goBackFreeway[tmpStation].max_dis ; i--){
+    for(int i = tmpStation - 1; goBackFreeway[i].location >= goBackFreeway[tmpStation].location - goBackFreeway[tmpStation].max_dis && i > 0; i--){
 
-        if(goBackFreeway[i].dijkstra_pred > tmpStation)
-            goBackFreeway[i].dijkstra_pred = tmpStation;
-        for(int j = i - 1; goBackFreeway[j].location >= goBackFreeway[i].location - goBackFreeway[i].max_dis; j--){
-            if(goBackFreeway[j].dijkstra_pred > i && goBackFreeway[j].location < goBackFreeway[tmpStation].location - goBackFreeway[tmpStation].max_dis ){
-                goBackFreeway[j].dijkstra_pred = i;
+        if(goBackFreeway[i].pred > tmpStation)
+            goBackFreeway[i].pred = tmpStation;
+        for(int j = i - 1; goBackFreeway[j].location >= goBackFreeway[i].location - goBackFreeway[i].max_dis && j >= 0; j--){
+            if(goBackFreeway[j].pred > i && goBackFreeway[j].location < goBackFreeway[tmpStation].location - goBackFreeway[tmpStation].max_dis ){
+                goBackFreeway[j].pred = i;
                 if(j <= tmp_min){
                     tmp_min = j;
                     tmp_min_index = i;
@@ -167,20 +172,22 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
     }
 
     int pred = numOfStations - 1;
-    for(int j = 0; j < numOfStations - 1; j = goBackFreeway[j].dijkstra_pred){
-        if(goBackFreeway[j].dijkstra_pred == pred || goBackFreeway[j].dijkstra_pred == numOfStations){
+    for(int j = 0; j < numOfStations - 1; j = goBackFreeway[j].pred){
+        if(goBackFreeway[j].pred == pred || goBackFreeway[j].pred == numOfStations){
             printf("nessun percorso\n");
             return;
         }
-        //if(goBackFreeway[j].dijkstra_pred > goBackFreeway[goBackFreeway[j].dijkstra_pred].dijkstra_succ)
-        //    goBackFreeway[j].dijkstra_pred = goBackFreeway[goBackFreeway[j].dijkstra_pred].dijkstra_succ;
-        pred = goBackFreeway[j].dijkstra_pred;
+        else
+            goBackFreeway[goBackFreeway[j].pred].next = j;
+        //if(goBackFreeway[j].pred > goBackFreeway[goBackFreeway[j].pred].dijkstra_succ)
+        //    goBackFreeway[j].pred = goBackFreeway[goBackFreeway[j].pred].dijkstra_succ;
+        pred = goBackFreeway[j].pred;
     }
 
 
-    for(int j = numOfStations-1; j > 0; j = goBackFreeway[j].dijkstra_pred){
+    for(int j = numOfStations-1; j > 0; j = goBackFreeway[j].next){
         printf("%d ", goBackFreeway[j].location);
-        if(goBackFreeway[j].dijkstra_pred == 0)
+        if(goBackFreeway[j].next == 0)
             printf("%d\n", goBackFreeway[0].location);
     }
 /*
@@ -201,13 +208,13 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
                 int min_reachable_from_station = tmp_min_reach;
 
                 while(goBackFreeway[j].location - goBackFreeway[j].max_dis <= goBackFreeway[min_reachable_from_station-1].location && min_reachable_from_station > 0){
-                    goBackFreeway[min_reachable_from_station].dijkstra_pred = j;
+                    goBackFreeway[min_reachable_from_station].pred = j;
                     min_reachable_from_station--;
                 }
 
                 if(min_reachable_from_station <= tmp_min_reach){
-                    goBackFreeway[tmpStation].dijkstra_pred = j;
-                    goBackFreeway[j].dijkstra_pred = min_reachable_from_station;
+                    goBackFreeway[tmpStation].pred = j;
+                    goBackFreeway[j].pred = min_reachable_from_station;
                     goBackFreeway[min_reachable_from_station].dijkstra_succ = j;
                     tmp_min_reach = min_reachable_from_station;
                 }
@@ -216,29 +223,23 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
     }
 
     int pred = numOfStations-1;
-    for(int j = goBackFreeway[numOfStations-1].dijkstra_pred; j > 0; j = goBackFreeway[j].dijkstra_pred){
+    for(int j = goBackFreeway[numOfStations-1].pred; j > 0; j = goBackFreeway[j].pred){
           if(j == pred || j == numOfStations){
               printf("nessun percorso\n");
               return;
           }
-          //if(goBackFreeway[j].dijkstra_pred > goBackFreeway[goBackFreeway[j].dijkstra_pred].dijkstra_succ)
-          //    goBackFreeway[j].dijkstra_pred = goBackFreeway[goBackFreeway[j].dijkstra_pred].dijkstra_succ;
+          //if(goBackFreeway[j].pred > goBackFreeway[goBackFreeway[j].pred].dijkstra_succ)
+          //    goBackFreeway[j].pred = goBackFreeway[goBackFreeway[j].pred].dijkstra_succ;
           pred = j;
     }
 
 
-    for(int j = numOfStations-1; j > 0; j = goBackFreeway[j].dijkstra_pred){
+    for(int j = numOfStations-1; j > 0; j = goBackFreeway[j].pred){
         printf("%d ", goBackFreeway[j].location);
-        if(goBackFreeway[j].dijkstra_pred == 0)
+        if(goBackFreeway[j].pred == 0)
             printf("%d\n", goBackFreeway[0].location);
     }
     */
-
-
-
-
-
-
 
 }
 
@@ -294,7 +295,7 @@ void destroyCar(int location, int distance, station *scanStation) {
     bool destroyed = false;
     while(scanStation->next != NULL && scanStation->location <= location){
         /*to test
-        if(scanStation->location == 2223){
+        if(scanStation->location == 5035){
             printf ("old cars: ");
             for(int j = 0;j<scanStation->car_number;j++)
                 printf("%d ",scanStation->cars[j]);
@@ -314,16 +315,14 @@ void destroyCar(int location, int distance, station *scanStation) {
                     printf("rottamata\n");
                 }
                 else if (destroyed){
-                    if(i == scanStation->car_number - 1)
-                        scanStation->cars[i] = 0;
-                    else
-                        scanStation->cars[i] = scanStation->cars[i+1];
+                    scanStation->cars[i] = scanStation->cars[i+1];
+
                 }
             }
             if(!destroyed)
                 printf("non rottamata\n");
             /*to test
-            if(scanStation->location == 2223){
+            if(scanStation->location == 5035){
                             printf ("new cars: ");
                             for(int j = 0;j<scanStation->car_number;j++)
                                 printf("%d ",scanStation->cars[j]);
@@ -341,21 +340,19 @@ void destroyCar(int location, int distance, station *scanStation) {
                     scanStation->cars[i] = 0;
                 else
                     scanStation->cars[i] = scanStation->cars[i+1];
-                scanStation->car_number = scanStation->car_number-1;
                 destroyed = true;
                 printf("rottamata\n");
+                scanStation->car_number = scanStation->car_number-1;
             }
             else if (destroyed){
-                if(i == scanStation->car_number - 1)
-                    scanStation->cars[i] = 0;
-                else
-                    scanStation->cars[i] = scanStation->cars[i+1];
+                scanStation->cars[i] = scanStation->cars[i+1];
             }
         }
         if(!destroyed)
             printf("non rottamata\n");
         return;
     }
+
     printf("non rottamata\n");
 }
 
@@ -397,12 +394,15 @@ void addCar(station *scanStation, int location, int distance) { //seems to work
 } //works quite good
 
 void deleteStation(int location, station *scanStation) {
+
     while(scanStation->next != NULL ){
         if(scanStation->location == location){
             station *tmp = scanStation;
             scanStation->next->prev = tmp->prev;
             if(scanStation->prev != NULL)
                 scanStation->prev->next = tmp->next;
+            else if(scanStation->prev == NULL && scanStation->next == NULL)
+                initStructure(scanStation);
             else
                 scanStation->location = -1234;
             printf("demolita\n");
@@ -412,9 +412,13 @@ void deleteStation(int location, station *scanStation) {
     }
     if(scanStation->location == location){
         station *tmp = scanStation;
-        scanStation->prev->next = NULL;
+        if(scanStation->prev != NULL)
+            scanStation->prev->next = tmp->next;
+        else if(scanStation->prev == NULL && scanStation->next == NULL)
+            initStructure(scanStation);
+        else
+            scanStation->location = -1234;
         printf("demolita\n");
-        free(tmp);
         return;
     }
     printf("non demolita\n");
@@ -423,7 +427,7 @@ void deleteStation(int location, station *scanStation) {
 void addStation(station *first) {
     int locationToAdd,numOfCarsToAdd;
     if (scanf("%d %d", &locationToAdd, &numOfCarsToAdd) != EOF){
-        //do nothing
+        station *tmp = first;
     }
     else{
         printf("scanf not working in addStation");
@@ -440,7 +444,6 @@ void addStation(station *first) {
                 if(first->cars[i]>first->max_distance)
                     first->max_distance = first->cars[i];
             }
-
          }
         first->next = NULL;
         first->prev = NULL;
