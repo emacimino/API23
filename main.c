@@ -47,7 +47,7 @@ int main(){
     station* pFirst = &firstStation;
     FILE *file_in;
     FILE *file_out;
-    file_in = freopen("cmake-build-default/archivio_test_aperti/open_88.txt", "r", stdin);
+    file_in = freopen("cmake-build-default/archivio_test_aperti/open_108.txt", "r", stdin);
     file_out = freopen("outMio.txt","w",stdout);
 
     if(file_in == NULL)
@@ -190,56 +190,7 @@ void goBackRoute(int distance, int arrival, station *firstStation) {
         if(goBackFreeway[j].next == 0)
             printf("%d\n", goBackFreeway[0].location);
     }
-/*
-    for(int tmpStation = numOfStations-1; tmpStation > 0; tmpStation--){
 
-
-        max_arrival_station = goBackFreeway[tmpStation].location - goBackFreeway[tmpStation].max_dis;
-
-        int min_index = tmpStation;
-        while(goBackFreeway[min_index-1].location >= max_arrival_station && min_index >= 1){
-            min_index--;
-        }
-
-
-        int tmp_min_reach = min_index;
-        for( int j = tmpStation - 1; j >= min_index; j-- ){
-            if(goBackFreeway[j].location - goBackFreeway[j].max_dis <= goBackFreeway[min_index-1].location){
-                int min_reachable_from_station = tmp_min_reach;
-
-                while(goBackFreeway[j].location - goBackFreeway[j].max_dis <= goBackFreeway[min_reachable_from_station-1].location && min_reachable_from_station > 0){
-                    goBackFreeway[min_reachable_from_station].pred = j;
-                    min_reachable_from_station--;
-                }
-
-                if(min_reachable_from_station <= tmp_min_reach){
-                    goBackFreeway[tmpStation].pred = j;
-                    goBackFreeway[j].pred = min_reachable_from_station;
-                    goBackFreeway[min_reachable_from_station].dijkstra_succ = j;
-                    tmp_min_reach = min_reachable_from_station;
-                }
-            }
-        }
-    }
-
-    int pred = numOfStations-1;
-    for(int j = goBackFreeway[numOfStations-1].pred; j > 0; j = goBackFreeway[j].pred){
-          if(j == pred || j == numOfStations){
-              printf("nessun percorso\n");
-              return;
-          }
-          //if(goBackFreeway[j].pred > goBackFreeway[goBackFreeway[j].pred].dijkstra_succ)
-          //    goBackFreeway[j].pred = goBackFreeway[goBackFreeway[j].pred].dijkstra_succ;
-          pred = j;
-    }
-
-
-    for(int j = numOfStations-1; j > 0; j = goBackFreeway[j].pred){
-        printf("%d ", goBackFreeway[j].location);
-        if(goBackFreeway[j].pred == 0)
-            printf("%d\n", goBackFreeway[0].location);
-    }
-    */
 
 }
 
@@ -312,6 +263,15 @@ void destroyCar(int location, int distance, station *scanStation) {
                         scanStation->cars[i] = scanStation->cars[i+1];
                     scanStation->car_number = scanStation->car_number-1;
                     destroyed = true;
+                    if(scanStation->max_distance == distance){
+                        int max = 0;
+                        for(int j = 0; j < scanStation->car_number; j++){
+
+                            if(scanStation->cars[j] >= max)
+                                max = scanStation->cars[j];
+                        }
+                        scanStation->max_distance = max;
+                    }
                     printf("rottamata\n");
                 }
                 else if (destroyed){
@@ -342,6 +302,15 @@ void destroyCar(int location, int distance, station *scanStation) {
                     scanStation->cars[i] = scanStation->cars[i+1];
                 destroyed = true;
                 printf("rottamata\n");
+                if(scanStation->max_distance == distance){
+                    int max = 0;
+                    for(int j = 0; j < scanStation->car_number; j++){
+
+                        if(scanStation->cars[j] >= max)
+                            max = scanStation->cars[j];
+                    }
+                    scanStation->max_distance = max;
+                }
                 scanStation->car_number = scanStation->car_number-1;
             }
             else if (destroyed){
