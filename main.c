@@ -45,14 +45,14 @@ int main(){
     station firstStation;
     initStructure(&firstStation);
     station* pFirst = &firstStation;
-    FILE *file_in;
+    /*FILE *file_in;
     FILE *file_out;
-    file_in = freopen("cmake-build-default/archivio_test_aperti/open_108.txt", "r", stdin);
+    file_in = freopen("cmake-build-release/archivio_test_aperti/open_111.txt", "r", stdin);
     file_out = freopen("outMio.txt","w",stdout);
 
     if(file_in == NULL)
         return 2;
-
+*/
     char input[COMMAND_LENGTH];
     int location, distance, arrival;
 
@@ -396,7 +396,6 @@ void deleteStation(int location, station *scanStation) {
 void addStation(station *first) {
     int locationToAdd,numOfCarsToAdd;
     if (scanf("%d %d", &locationToAdd, &numOfCarsToAdd) != EOF){
-        station *tmp = first;
     }
     else{
         printf("scanf not working in addStation");
