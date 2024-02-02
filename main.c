@@ -426,9 +426,10 @@ void addStation(station *first) {
         tmp->max_distance = 0;
         tmp->cars = calloc(512,sizeof (int));
         for (int i = 0; i < tmp->car_number; i++) {
-            scanf("%d", &tmp->cars[i]);
-            if (tmp->cars[i] > tmp->max_distance)
-                tmp->max_distance = tmp->cars[i];
+            if (scanf("%d", &tmp->cars[i])) {
+                if (tmp->cars[i] > tmp->max_distance)
+                    tmp->max_distance = tmp->cars[i];
+            }
         }
         tmp->prev = NULL;
         tmp->next = first;
@@ -443,13 +444,14 @@ void addStation(station *first) {
         tmp->max_distance = 0;
         tmp->cars = calloc(512,sizeof (int)); //tmp->next = NULL;        tmp->prev = NULL;
         for (int i = 0; i < tmp->car_number; i++) {
-            scanf("%d", &tmp->cars[i]);
-            if (tmp->cars[i] > tmp->max_distance)
-                tmp->max_distance = tmp->cars[i];
+            if(scanf("%d", &tmp->cars[i])){
+                if (tmp->cars[i] > tmp->max_distance)
+                    tmp->max_distance = tmp->cars[i];
+            }
         }
         while(first != NULL ){
             if(first->location == locationToAdd){
-                printf("non aggiunta\n",stdout);
+                printf("non aggiunta\n");
                 return;
             }
             if(first->location > locationToAdd){
@@ -457,14 +459,14 @@ void addStation(station *first) {
                 tmp->prev = first->prev;
                 first->prev->next = tmp;
                 first->prev = tmp;
-                printf("aggiunta\n",stdout);
+                printf("aggiunta\n");
                 return;
             }
             if(first->next == NULL){
                 first->next = tmp;
                 first->next->prev = first;
                 first->next->next = NULL;
-                printf("aggiunta\n",stdout);
+                printf("aggiunta\n");
                 return;
             }
             first = first->next;
